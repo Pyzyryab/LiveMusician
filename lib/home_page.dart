@@ -42,11 +42,10 @@ class _HomePageState extends State<HomePage> {
             ),
             ElevatedButton(
               onPressed: () {
-                Navigator.pushNamed(context, '/FileReader');
-                print("FileReader");
+                Navigator.pushNamed(context, '/SetLists');
               }, 
               child: Text(
-                "FILE READER",
+                "SETLists",
               ),
             ),
           ],

@@ -1,5 +1,6 @@
 import 'package:live_musician/main.dart';
 import 'package:live_musician/musical_song.dart';
+import 'package:live_musician/select_from_all_songs.dart';
 import 'package:live_musician/utils/pdf_reader.dart';
 import 'package:live_musician/utils/extensions.dart';
 import 'package:live_musician/utils/languages.dart';
@@ -15,7 +16,12 @@ import 'package:pdf_text/pdf_text.dart';
 
 
 class LiveMusicianListView extends StatefulWidget {
-  LiveMusicianListView({Key? key}) : super(key: key);
+
+  String? setlist = '';
+
+  LiveMusicianListView({String? setlist, Key? key}) : super(key: key) {
+    this.setlist = setlist;
+  }
 
   @override
   _LiveMusicianListViewState createState() => _LiveMusicianListViewState();
@@ -23,8 +29,15 @@ class LiveMusicianListView extends StatefulWidget {
 
 class _LiveMusicianListViewState extends State<LiveMusicianListView> {
   
-  int index = 0;
   bool _firstSave = true;
+  List<MusicalSong> songs = [];
+  String currentSetList = '';
+
+  @override
+  void initState() {
+    super.initState();
+    currentSetList = (widget.setlist == null) ? 'ALL' : widget.setlist!;
+  }
 
   void _openFileExplorer({
     required bool allowMultiple, 
@@ -59,27 +72,9 @@ class _LiveMusicianListViewState extends State<LiveMusicianListView> {
       }
   }
 
-  List<MusicalSong> songs = [
-    // MusicalSong(
-    //   fileName: "Dolores se llamaba lola", 
-    //   pdfPath: '/data/user/0/com.example.LiveMusician/cache/file_picker/120520140951280826 (1).pdf', arranger: "Alberto Cereijo", genre: "Rock"),
-    // MusicalSong(
-    //   fileName: "Juanita", 
-    //   pdfPath: '/data/user/0/com.example.LiveMusician/cache/file_picker/120520140951280826 (1).pdf', arranger: "Yoanni Fonseca", genre: "Rock"),
-    // MusicalSong(
-    //   fileName: "La morena es to guapa", 
-    //   pdfPath: '/data/user/0/com.example.LiveMusician/cache/file_picker/120520140951280826 (1).pdf', arranger: "Yoanni Fonseca", genre: "Rock"),
-    // MusicalSong(
-    //   fileName: "Pon a mao na cabusiña", 
-    //   pdfPath: '/data/user/0/com.example.LiveMusician/cache/file_picker/120520140951280826 (1).pdf', arranger: "Yo", genre: "Batucada"),
-    // MusicalSong(
-    //   fileName: "Saminamina eh eh", 
-    //   pdfPath: '/data/user/0/com.example.LiveMusician/cache/file_picker/120520140951280826 (1).pdf', arranger: "Yo", genre: "Merengue"),
-  ];
-
-  String valueText = "";
-
   Future<void> addMusicalSongAsText(String title, String placeholder) async {
+    //! Poner el resto que faltan
+    String valueText = "";
     return showDialog(
         context: context,
         builder: (context) {
@@ -87,9 +82,7 @@ class _LiveMusicianListViewState extends State<LiveMusicianListView> {
             title: Text(title),
             content: TextField(
               onChanged: (value) {
-                setState(() {
                   valueText = value;
-                });
               },
               // controller: _textFieldController,
               decoration: InputDecoration(hintText: placeholder),
@@ -116,7 +109,7 @@ class _LiveMusicianListViewState extends State<LiveMusicianListView> {
                 onPressed: () {
                   setState(() {
                     this.songs.add(MusicalSong(
-                      fileName: this.valueText,
+                      fileName: valueText,
                       pdfPath: "",
                       arranger: "",
                       genre: ""
@@ -140,7 +133,6 @@ class _LiveMusicianListViewState extends State<LiveMusicianListView> {
               (LiveMusician.currentLanguage == Languages.ENGLISH) 
                 ? 'Song will be deleted. Are you sure?'
                 : 'Se eliminará la canción. Estás seguro?'
-              
             ),
             actions: <Widget>[
               FlatButton(
@@ -173,7 +165,6 @@ class _LiveMusicianListViewState extends State<LiveMusicianListView> {
 
   void reorderData(int oldindex, int newindex) async {
     setState(() {
-      this.index = 1;
       if (newindex > oldindex) {
         newindex -= 1;
       }
@@ -189,32 +180,39 @@ class _LiveMusicianListViewState extends State<LiveMusicianListView> {
     });
   }
 
+  void getSnapshotData(AsyncSnapshot<List<MusicalSong>> snapshot) {
+    this.songs = snapshot.data!;
+  }
+
   Future<List<MusicalSong>> load() async {
-    SharedPreferences listOrder = await SharedPreferences.getInstance();
+    SharedPreferences data = await SharedPreferences.getInstance();
     // await this.save();
     
-    // ! Later, comment this one
+    List<MusicalSong> mySongs = [];
+
     if (!_firstSave) {
       await this.save();
     } else {
       _firstSave = false;
     }
-    
-    List<MusicalSong> mySongs = [];
 
-    for (int i = 0; i < listOrder.getInt("songNumber")!; i++ ) {
+    if (data.getStringList('song0${this.currentSetList}') != null
+      && data.getInt("songNumber${this.currentSetList}") != null) {
 
-      List<String> musicalSongAttr = listOrder.getStringList('song$i')!;
+      for (int i = 0; i < data.getInt("songNumber${this.currentSetList}")!; i++ ) {
 
-      MusicalSong newSongToList = MusicalSong(
-        fileName: musicalSongAttr[0], 
-        pdfPath: musicalSongAttr[1],
-        arranger: musicalSongAttr[2], 
-        genre: musicalSongAttr[3]);
+        List<String> musicalSongAttr = data.getStringList('song$i$currentSetList')!;
 
-        mySongs.add(newSongToList);
-        print("SONG cuando se CARGA: ${newSongToList.fileName}");
+        MusicalSong newSongToList = MusicalSong(
+          fileName: musicalSongAttr[0], 
+          pdfPath: musicalSongAttr[1],
+          arranger: musicalSongAttr[2], 
+          genre: musicalSongAttr[3]);
+
+          mySongs.add(newSongToList);
+      }
     }
+
     return mySongs;
   }
 
@@ -231,16 +229,18 @@ class _LiveMusicianListViewState extends State<LiveMusicianListView> {
       newSongToSave.add(song.arranger!);
       newSongToSave.add(song.genre!);
       
-      await data.setStringList('song$songNumber', newSongToSave);
+      await data.setStringList('song$songNumber$currentSetList', newSongToSave);
       songNumber++;
-      print("Canción NÚMERO $songNumber: $newSongToSave");
     }
 
-    await data.setInt("songNumber", songNumber);
+    await data.setInt("songNumber${this.currentSetList}", songNumber);
   }
 
   @override
   Widget build(BuildContext context) {
+
+    int index = 0;
+
     return FutureBuilder<List<MusicalSong>>(
         future: Future.any([this.load()]),
         builder: (
@@ -248,14 +248,13 @@ class _LiveMusicianListViewState extends State<LiveMusicianListView> {
           AsyncSnapshot<List<MusicalSong>> snapshot,
         ) {
           // Check hasData once for all futures.
-          print("SNAPSHOT DATA: ${snapshot.data}");
-          if (snapshot.hasData ) {
+          if (snapshot.hasData) {
             // ************************************
               // Use the attr `this.songs` to perma-track all listed songs when the app it's running, 'cause another methods have to access the current availiable songs
               // in order to add a new one, delete, order them...
-            this.songs = snapshot.data!;
+              this.getSnapshotData(snapshot);
             // ************************************
-            this.index = 1;
+            index = 1;
             return Scaffold(
                 backgroundColor: Colors.grey[800],
                 appBar: AppBar(
@@ -269,22 +268,24 @@ class _LiveMusicianListViewState extends State<LiveMusicianListView> {
                   actions: <Widget>[
                     IconButton(
                         icon: Icon(Icons.sort_by_alpha),
-                        tooltip: "Orden alfabético",
+                        tooltip: (LiveMusician.currentLanguage == Languages.ENGLISH) 
+                          ? "Alphabetical order"
+                          : "Orden alfabético",
                         onPressed: sortByName),
                   ],
                 ),
                 body: ReorderableListView(
                   children: <Widget> [
-                    for (MusicalSong song in this.songs)
+                    for (MusicalSong song in snapshot.data!)
                       TextButton(
-                        key: ValueKey(this.index),
+                        key: ValueKey(index),
                         child: Card(
                           color: Colors.black12,
-                          key: ValueKey(this.index),
+                          key: ValueKey(index),
                           elevation: 15,
                           child: ListTile(
                             title: Text(
-                              '${this.index++}.  ${song.fileName}',
+                              '${index++}.  ${song.fileName}',
                               style: TextStyle(color: Colors.white),
                             ),
                             subtitle: Text(
@@ -316,7 +317,6 @@ class _LiveMusicianListViewState extends State<LiveMusicianListView> {
                         ),
                         onPressed: () {
                           if (song.pdfPath!.isNotEmpty) {
-                            print('song.PDF_PATH: ${song.pdfPath}');
                             Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -364,11 +364,24 @@ class _LiveMusicianListViewState extends State<LiveMusicianListView> {
                           });
                         }
                       ),
+                    SpeedDialChild(
+                        child: Icon(Icons.list),
+                        backgroundColor: Colors.amber,
+                        onTap: () {
+                          setState(() {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => SelectFromAllSongs(setList: this.currentSetList)
+                              )
+                            );
+                          });
+                        }
+                      ),
                   ],
                 )
               ); 
           } else {
-            print("Still loading");
             return CircularProgressIndicator();
           }
         }
