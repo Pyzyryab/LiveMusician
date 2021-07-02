@@ -186,7 +186,6 @@ class _LiveMusicianListViewState extends State<LiveMusicianListView> {
 
   Future<List<MusicalSong>> load() async {
     SharedPreferences data = await SharedPreferences.getInstance();
-    // await this.save();
     
     List<MusicalSong> mySongs = [];
 

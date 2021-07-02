@@ -138,7 +138,7 @@ class _SelectFromAllSongsState extends State<SelectFromAllSongs> {
                     backgroundColor: Colors.amber,
                     automaticallyImplyLeading: false,
                     title: Text(
-                      "Partituras",
+                      this.currentSetList,
                       style: TextStyle(color: Colors.black87),
                     ),
                     centerTitle: true,
@@ -156,20 +156,21 @@ class _SelectFromAllSongsState extends State<SelectFromAllSongs> {
                       MusicalSong song = staticData[index];
                       selectedFlag[index] = selectedFlag[index] ?? false;
                       bool isSelected = false;
-                      print("Song filename: ${song.fileName}");
 
                       for (var element in this.songsToSave) {
                         if (song.fileName == element.fileName) {
                           isSelected = !selectedFlag[index]!;
                         } 
-                        
                       }
 
                       return Card(
                         color: Colors.black12,
                         child: ListTile(
                           onTap: () => onTap(isSelected, index, snapshot.data!),
-                          title: Text(song.fileName!),
+                          title: Text(
+                            song.fileName!,
+                            style: TextStyle(color: Colors.white),
+                          ),
                           subtitle: Text(
                                   (song.arranger!.isNotEmpty) ?
                                     '- Arreglista: ${song.arranger}\n' + 
@@ -195,15 +196,10 @@ class _SelectFromAllSongsState extends State<SelectFromAllSongs> {
   }
 
   void onTap(bool isSelected, int index, List<MusicalSong> snapshotData) {
-    print("Index nº $index it's currently ${!isSelected}");
     if (!isSelected) {
-      print("EN EL IF QUE ESTOY BUSCANDO");
         setState(() {
           selectedFlag[index] = isSelected;
           this.songsToSave.add(snapshotData[index]);
-          for (var song in this.songsToSave) {
-            print("SONGS TO SAVE: ${song.fileName}");
-          }
       });
     } else {
         setState(() {
@@ -217,28 +213,41 @@ class _SelectFromAllSongsState extends State<SelectFromAllSongs> {
 
   Widget _buildSelectIcon(bool isSelected, MusicalSong song) {
     print("Song '${song.fileName}' isSelected status is: $isSelected");
-      return Icon(
-        isSelected ? Icons.check_box : Icons.check_box_outline_blank,
-        color: Theme.of(context).primaryColor,
-      );
+    return Icon(
+      isSelected ? Icons.check_box : Icons.check_box_outline_blank,
+      color: Theme.of(context).primaryColor,
+    );
   }
 
   Widget _buildSelectAllButton() {
-    bool isFalseAvailable = selectedFlag.containsValue(false);
-      return FloatingActionButton(
-        onPressed: _selectAll,
-        child: Icon(
-          isFalseAvailable ? Icons.done_all : Icons.remove_done,
-        ),
-      );
+    bool icon = (this.songsToSave.length != this.staticData.length) ? true : false;
+
+    return FloatingActionButton(
+      onPressed: () {
+        setState(() {
+          _selectAll();
+        });
+      },
+      child: Icon(
+        icon ? Icons.done_all : Icons.remove_done,
+      ),
+    );
   }
 
   void _selectAll() {
-    bool isFalseAvailable = selectedFlag.containsValue(false);
-    // If false will be available then it will select all the checkbox
-    // If there will be no false then it will de-select all
-    setState(() {
-      selectedFlag.updateAll((key, value) => isFalseAvailable);
-    });
+    if (this.songsToSave.length == this.staticData.length) {
+      setState(() {
+        this.songsToSave.clear();
+      });
+    } else {
+      setState(() {
+        this.songsToSave.clear();
+        this.songsToSave.addAll(this.staticData);
+      });
+    }
+
+    this.save();
+    _buildSelectAllButton();
   }
+
 }
