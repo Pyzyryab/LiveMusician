@@ -1,6 +1,9 @@
+import 'package:live_musician/main.dart';
 import 'package:live_musician/musical_song.dart';
-import 'package:live_musician/pdf_reader.dart';
-import 'package:live_musician/extensions.dart';
+import 'package:live_musician/utils/pdf_reader.dart';
+import 'package:live_musician/utils/extensions.dart';
+import 'package:live_musician/utils/languages.dart';
+
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -11,14 +14,14 @@ import 'package:flutter/services.dart';
 import 'package:pdf_text/pdf_text.dart';
 
 
-class LiveMusicianMusicalSheets extends StatefulWidget {
-  LiveMusicianMusicalSheets({Key? key}) : super(key: key);
+class LiveMusicianListView extends StatefulWidget {
+  LiveMusicianListView({Key? key}) : super(key: key);
 
   @override
-  _LiveMusicianMusicalSheetsState createState() => _LiveMusicianMusicalSheetsState();
+  _LiveMusicianListViewState createState() => _LiveMusicianListViewState();
 }
 
-class _LiveMusicianMusicalSheetsState extends State<LiveMusicianMusicalSheets> {
+class _LiveMusicianListViewState extends State<LiveMusicianListView> {
   
   int index = 0;
   bool _firstSave = true;
@@ -57,21 +60,21 @@ class _LiveMusicianMusicalSheetsState extends State<LiveMusicianMusicalSheets> {
   }
 
   List<MusicalSong> songs = [
-    MusicalSong(
-      fileName: "Dolores se llamaba lola", 
-      pdfPath: '/data/user/0/com.example.LiveMusician/cache/file_picker/120520140951280826 (1).pdf', arranger: "Alberto Cereijo", genre: "Rock"),
-    MusicalSong(
-      fileName: "Juanita", 
-      pdfPath: '/data/user/0/com.example.LiveMusician/cache/file_picker/120520140951280826 (1).pdf', arranger: "Yoanni Fonseca", genre: "Rock"),
-    MusicalSong(
-      fileName: "La morena es to guarra", 
-      pdfPath: '/data/user/0/com.example.LiveMusician/cache/file_picker/120520140951280826 (1).pdf', arranger: "Yoanni Fonseca", genre: "Rock"),
-    MusicalSong(
-      fileName: "Pon a mao na cabusiña", 
-      pdfPath: '/data/user/0/com.example.LiveMusician/cache/file_picker/120520140951280826 (1).pdf', arranger: "Yo", genre: "Batucada"),
-    MusicalSong(
-      fileName: "Saminamina eh eh", 
-      pdfPath: '/data/user/0/com.example.LiveMusician/cache/file_picker/120520140951280826 (1).pdf', arranger: "Yo", genre: "Merengue"),
+    // MusicalSong(
+    //   fileName: "Dolores se llamaba lola", 
+    //   pdfPath: '/data/user/0/com.example.LiveMusician/cache/file_picker/120520140951280826 (1).pdf', arranger: "Alberto Cereijo", genre: "Rock"),
+    // MusicalSong(
+    //   fileName: "Juanita", 
+    //   pdfPath: '/data/user/0/com.example.LiveMusician/cache/file_picker/120520140951280826 (1).pdf', arranger: "Yoanni Fonseca", genre: "Rock"),
+    // MusicalSong(
+    //   fileName: "La morena es to guapa", 
+    //   pdfPath: '/data/user/0/com.example.LiveMusician/cache/file_picker/120520140951280826 (1).pdf', arranger: "Yoanni Fonseca", genre: "Rock"),
+    // MusicalSong(
+    //   fileName: "Pon a mao na cabusiña", 
+    //   pdfPath: '/data/user/0/com.example.LiveMusician/cache/file_picker/120520140951280826 (1).pdf', arranger: "Yo", genre: "Batucada"),
+    // MusicalSong(
+    //   fileName: "Saminamina eh eh", 
+    //   pdfPath: '/data/user/0/com.example.LiveMusician/cache/file_picker/120520140951280826 (1).pdf', arranger: "Yo", genre: "Merengue"),
   ];
 
   String valueText = "";
@@ -96,7 +99,9 @@ class _LiveMusicianMusicalSheetsState extends State<LiveMusicianMusicalSheets> {
               FlatButton(
                 color: Colors.red,
                 textColor: Colors.white,
-                child: Text('CANCELAR'),
+                child: Text(
+                  (LiveMusician.currentLanguage == Languages.ENGLISH) ? 'CANCEL' : 'CANCELAR'
+                ),
                 onPressed: () {
                   setState(() {
                     Navigator.pop(context);
@@ -131,12 +136,19 @@ class _LiveMusicianMusicalSheetsState extends State<LiveMusicianMusicalSheets> {
         context: context,
         builder: (context) {
           return AlertDialog(
-            title: Text('Se eliminará la canción. Estás seguro?'),
+            title: Text(
+              (LiveMusician.currentLanguage == Languages.ENGLISH) 
+                ? 'Song will be deleted. Are you sure?'
+                : 'Se eliminará la canción. Estás seguro?'
+              
+            ),
             actions: <Widget>[
               FlatButton(
                 color: Colors.red,
                 textColor: Colors.white,
-                child: Text('CANCELAR'),
+                child: Text(
+                  (LiveMusician.currentLanguage == Languages.ENGLISH) ? 'CANCEL' : 'CANCELAR'
+                ),
                 onPressed: () {
                   setState(() {
                     Navigator.pop(context);
@@ -206,10 +218,11 @@ class _LiveMusicianMusicalSheetsState extends State<LiveMusicianMusicalSheets> {
     return mySongs;
   }
 
-  Future<List<MusicalSong>> save() async {
-    SharedPreferences listOrder = await SharedPreferences.getInstance();
+  Future<void> save() async {
+    SharedPreferences data = await SharedPreferences.getInstance();
 
     int songNumber = 0;
+
     for (MusicalSong song in this.songs) {
 
       List<String> newSongToSave = [];
@@ -218,12 +231,12 @@ class _LiveMusicianMusicalSheetsState extends State<LiveMusicianMusicalSheets> {
       newSongToSave.add(song.arranger!);
       newSongToSave.add(song.genre!);
       
-      await listOrder.setStringList('song$songNumber', newSongToSave);
+      await data.setStringList('song$songNumber', newSongToSave);
       songNumber++;
       print("Canción NÚMERO $songNumber: $newSongToSave");
     }
-    await listOrder.setInt("songNumber", songNumber);
-    return this.songs;
+
+    await data.setInt("songNumber", songNumber);
   }
 
   @override
@@ -235,8 +248,11 @@ class _LiveMusicianMusicalSheetsState extends State<LiveMusicianMusicalSheets> {
           AsyncSnapshot<List<MusicalSong>> snapshot,
         ) {
           // Check hasData once for all futures.
-          if (snapshot.hasData || snapshot.data == []) {
+          print("SNAPSHOT DATA: ${snapshot.data}");
+          if (snapshot.hasData ) {
             // ************************************
+              // Use the attr `this.songs` to perma-track all listed songs when the app it's running, 'cause another methods have to access the current availiable songs
+              // in order to add a new one, delete, order them...
             this.songs = snapshot.data!;
             // ************************************
             this.index = 1;
@@ -331,8 +347,8 @@ class _LiveMusicianMusicalSheetsState extends State<LiveMusicianMusicalSheets> {
                         backgroundColor: Colors.amber,
                         onTap: () {
                           addMusicalSongAsText(
-                              'Añade una nueva canción a la lista',
-                              'Canción o arreglo');
+                              getAddSongOnSpeedDial()[0],
+                              getAddSongOnSpeedDial()[1]);
                         }
                       ),
                     SpeedDialChild(
@@ -348,13 +364,6 @@ class _LiveMusicianMusicalSheetsState extends State<LiveMusicianMusicalSheets> {
                           });
                         }
                       ),
-                    SpeedDialChild(
-                        child: Icon(Icons.save_alt),
-                        backgroundColor: Colors.amber,
-                        onTap: () {
-                          this.save();
-                        }
-                    ),
                   ],
                 )
               ); 

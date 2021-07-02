@@ -1,12 +1,19 @@
-import 'package:live_musician/music_sheet_reader.dart';
-import 'package:live_musician/file_picker.dart';
-import 'package:live_musician/pdf_reader.dart';
+import 'package:live_musician/all_songs_list_view.dart';
+import 'package:live_musician/utils/file_picker.dart';
+import 'package:live_musician/utils/pdf_reader.dart';
 import 'package:flutter/material.dart';
 import 'package:live_musician/home_page.dart';
 
 void main() => runApp(LiveMusician());
 
+enum Languages {
+  ENGLISH,
+  SPANISH
+}
+
 class LiveMusician extends StatelessWidget {
+
+  static Languages currentLanguage = Languages.ENGLISH;
   
   final String appBarTitle = 'Live Musician';
 
@@ -21,7 +28,7 @@ class LiveMusician extends StatelessWidget {
       ),
       home: HomePage(title: this.appBarTitle),
       routes: {
-        '/LiveMusicianMusicalSheets': (context) => LiveMusicianMusicalSheets(),
+        '/LiveMusicianListView': (context) => LiveMusicianListView(),
         '/PDFReader': (context) => PDFReader(),
         '/FileReader': (context) => LiveMusicianFilePicker(),
       }

@@ -24,7 +24,7 @@ class _HomePageState extends State<HomePage> {
           children: <Widget>[
             ElevatedButton(
               onPressed: () {
-                Navigator.pushNamed(context, '/LiveMusicianMusicalSheets');
+                Navigator.pushNamed(context, '/LiveMusicianListView');
                 print("Lector de partituras caldfsfled");
               }, 
               child: Text(

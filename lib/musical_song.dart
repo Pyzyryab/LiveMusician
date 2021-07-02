@@ -1,10 +1,13 @@
-class MusicalSong {
+class MusicalSong implements Comparable<MusicalSong> {
 
   String? fileName;
   String? pdfPath;
 
   String? arranger;
   String? genre;
+
+  // Empty named constructor for whe Futures need to validate non-null data
+  MusicalSong.emptySong();
 
   MusicalSong({
     required String fileName, 
@@ -16,6 +19,12 @@ class MusicalSong {
     this.pdfPath = pdfPath;
     this.arranger = arranger;
     this.genre = genre;
+  }
+
+  @override
+  int compareTo(MusicalSong other) {
+    // TODO: implement compareTo
+    throw UnimplementedError();
   }
 
 }

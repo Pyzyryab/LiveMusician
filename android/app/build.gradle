@@ -47,7 +47,7 @@ android {
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig signingConfigs.debug
 
-              useProguard true
+            useProguard true
             shrinkResources true
             minifyEnabled true
             multiDexEnabled true
@@ -69,7 +69,6 @@ flutter {
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 
-    implementation 'androidx.multidex:multidex:2.0.1'  //with androidx libraries
-
+    implementation 'androidx.multidex:multidex:2.0.1'
 }
 
