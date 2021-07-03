@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'all_songs_list_view.dart';
+
 class HomePage extends StatefulWidget {
   HomePage({Key? key, required this.title}) : super(key: key);
 
@@ -24,20 +26,18 @@ class _HomePageState extends State<HomePage> {
           children: <Widget>[
             ElevatedButton(
               onPressed: () {
-                Navigator.pushNamed(context, '/LiveMusicianListView');
-                print("Lector de partituras caldfsfled");
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => LiveMusicianListView(
+                      setlist: 'ALL',
+                      fromHome: true
+                    )
+                  )
+                );
               }, 
               child: Text(
-              'Lector de Partituras',
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pushNamed(context, '/PruebaPDF');
-                print("Lector de PDF's");
-              }, 
-              child: Text(
-                "Lector de PDF's",
+                'Lector de Partituras',
               ),
             ),
             ElevatedButton(

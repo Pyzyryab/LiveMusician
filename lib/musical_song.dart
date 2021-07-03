@@ -3,7 +3,7 @@ class MusicalSong implements Comparable<MusicalSong> {
   String? fileName;
   String? pdfPath;
 
-  String? arranger;
+  String? author;
   String? genre;
 
   // Empty named constructor for whe Futures need to validate non-null data
@@ -12,19 +12,24 @@ class MusicalSong implements Comparable<MusicalSong> {
   MusicalSong({
     required String fileName, 
     required String pdfPath, 
-    required String arranger,
+    required String author,
     required String genre,
     }) {
     this.fileName = fileName;
     this.pdfPath = pdfPath;
-    this.arranger = arranger;
+    this.author = author;
     this.genre = genre;
   }
 
   @override
   int compareTo(MusicalSong other) {
-    // TODO: implement compareTo
-    throw UnimplementedError();
+    if (this.fileName?.compareTo(other.fileName!) == -1) {
+      return -1;
+    } else if (this.fileName?.compareTo(other.fileName!) == 1) {
+      return 1;
+    } else {
+      return 0;
+    }
   }
 
 }

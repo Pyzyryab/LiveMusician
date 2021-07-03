@@ -1,3 +1,4 @@
+import 'package:live_musician/home_page.dart';
 import 'package:live_musician/main.dart';
 import 'package:live_musician/musical_song.dart';
 import 'package:live_musician/select_from_all_songs.dart';
@@ -18,9 +19,11 @@ import 'package:pdf_text/pdf_text.dart';
 class LiveMusicianListView extends StatefulWidget {
 
   String? setlist = '';
+  bool? fromHome;
 
-  LiveMusicianListView({String? setlist, Key? key}) : super(key: key) {
+  LiveMusicianListView({String? setlist, bool? fromHome, Key? key}) : super(key: key) {
     this.setlist = setlist;
+    this.fromHome = fromHome;
   }
 
   @override
@@ -32,11 +35,13 @@ class _LiveMusicianListViewState extends State<LiveMusicianListView> {
   bool _firstSave = true;
   List<MusicalSong> songs = [];
   String currentSetList = '';
+  bool fromHome = false;
 
   @override
   void initState() {
     super.initState();
     currentSetList = (widget.setlist == null) ? 'ALL' : widget.setlist!;
+    fromHome = widget.fromHome!;
   }
 
   void _openFileExplorer({
@@ -65,27 +70,52 @@ class _LiveMusicianListViewState extends State<LiveMusicianListView> {
           this.songs.add(MusicalSong(
             fileName: element.name.replaceAll(RegExp(r'.pdf'), '').trim().capitalizeFirstofEach, 
             pdfPath: element.path!, 
-            arranger: (doc.info.author != "" && doc.info.author != null) ? doc.info.author! : "Sin datos",
+            author: (doc.info.author != "" && doc.info.author != null) ? doc.info.author! : "Sin datos",
             genre: (doc.info.keywords != [] && doc.info.keywords != null) ? doc.info.keywords![0].capitalize : "...",
           ));
         });
       }
   }
 
-  Future<void> addMusicalSongAsText(String title, String placeholder) async {
-    //! Poner el resto que faltan
-    String valueText = "";
+  final _songNameFieldController = TextEditingController();
+  final _songAuthorFieldController = TextEditingController();
+  final _songGenreFieldController = TextEditingController();
+
+void clearTextFields() {
+  _songNameFieldController.clear();
+  _songAuthorFieldController.clear();
+  _songGenreFieldController.clear();
+}
+
+  Future<void> addMusicalSongAsText(String title, String songPlaceholder, 
+    String authorPlaceholder, String genrePlaceholder) async {
+    
     return showDialog(
         context: context,
         builder: (context) {
           return AlertDialog(
             title: Text(title),
-            content: TextField(
-              onChanged: (value) {
-                  valueText = value;
-              },
-              // controller: _textFieldController,
-              decoration: InputDecoration(hintText: placeholder),
+            content: Column(
+              children: <Widget> [ 
+                Expanded(
+                  child: TextField(
+                    controller: _songNameFieldController,
+                    decoration: InputDecoration(hintText: songPlaceholder),
+                  ),
+                ),
+                Expanded(
+                  child: TextField(
+                    controller: _songAuthorFieldController,
+                    decoration: InputDecoration(hintText: authorPlaceholder),
+                  ),
+                ),
+                Expanded(
+                  child: TextField(
+                    controller: _songGenreFieldController,
+                    decoration: InputDecoration(hintText: genrePlaceholder),
+                  ),
+                ),
+              ]
             ),
             actions: <Widget>[
               // ignore: deprecated_member_use
@@ -97,6 +127,7 @@ class _LiveMusicianListViewState extends State<LiveMusicianListView> {
                 ),
                 onPressed: () {
                   setState(() {
+                    clearTextFields();
                     Navigator.pop(context);
                   });
                 },
@@ -109,13 +140,14 @@ class _LiveMusicianListViewState extends State<LiveMusicianListView> {
                 onPressed: () {
                   setState(() {
                     this.songs.add(MusicalSong(
-                      fileName: valueText,
-                      pdfPath: "",
-                      arranger: "",
-                      genre: ""
+                      fileName: _songNameFieldController.text,
+                      pdfPath: "", // No "by hand" paths allowed
+                      author: _songAuthorFieldController.text,
+                      genre: _songGenreFieldController.text,
                       )
                     );
-                    Navigator.pop(context);
+                    clearTextFields();
+                    Navigator.pop(context); 
                   });
                 },
               ),
@@ -175,7 +207,6 @@ class _LiveMusicianListViewState extends State<LiveMusicianListView> {
 
   void sortByName() {
     setState(() {
-      //! Implement comparable or sorting algorithm
       this.songs.sort();
     });
   }
@@ -205,7 +236,7 @@ class _LiveMusicianListViewState extends State<LiveMusicianListView> {
         MusicalSong newSongToList = MusicalSong(
           fileName: musicalSongAttr[0], 
           pdfPath: musicalSongAttr[1],
-          arranger: musicalSongAttr[2], 
+          author: musicalSongAttr[2], 
           genre: musicalSongAttr[3]);
 
           mySongs.add(newSongToList);
@@ -225,7 +256,7 @@ class _LiveMusicianListViewState extends State<LiveMusicianListView> {
       List<String> newSongToSave = [];
       newSongToSave.add(song.fileName!);
       newSongToSave.add(song.pdfPath!);
-      newSongToSave.add(song.arranger!);
+      newSongToSave.add(song.author!);
       newSongToSave.add(song.genre!);
       
       await data.setStringList('song$songNumber$currentSetList', newSongToSave);
@@ -240,151 +271,173 @@ class _LiveMusicianListViewState extends State<LiveMusicianListView> {
 
     int index = 0;
 
-    return FutureBuilder<List<MusicalSong>>(
-        future: Future.any([this.load()]),
-        builder: (
+    return WillPopScope(
+      onWillPop: () {
+        if (this.fromHome) {
+          Navigator.push(
           context,
-          AsyncSnapshot<List<MusicalSong>> snapshot,
-        ) {
-          // Check hasData once for all futures.
-          if (snapshot.hasData) {
-            // ************************************
-              // Use the attr `this.songs` to perma-track all listed songs when the app it's running, 'cause another methods have to access the current availiable songs
-              // in order to add a new one, delete, order them...
-              this.getSnapshotData(snapshot);
-            // ************************************
-            index = 1;
-            return Scaffold(
-                backgroundColor: Colors.grey[800],
-                appBar: AppBar(
-                  backgroundColor: Colors.amber,
-                  automaticallyImplyLeading: false,
-                  title: Text(
-                    "Partituras",
-                    style: TextStyle(color: Colors.black87),
+          MaterialPageRoute(
+            builder: (context) => HomePage(title: LiveMusician.appBarTitle)
+          )); 
+        } else {
+          Navigator.popAndPushNamed(context, '/SetLists');
+        }
+
+        return Future.value(false);
+      },
+      child: FutureBuilder<List<MusicalSong>>(
+          future: Future.any([this.load()]),
+          builder: (
+            context,
+            AsyncSnapshot<List<MusicalSong>> snapshot,
+          ) {
+            // Check hasData once for all futures.
+            if (snapshot.hasData) {
+              // ************************************
+                // Use the attr `this.songs` to perma-track all listed songs when the app it's running, 'cause another methods have to access the current availiable songs
+                // in order to add a new one, delete, order them...
+                this.getSnapshotData(snapshot);
+              // ************************************
+              index = 1;
+              return Scaffold(
+                  backgroundColor: Colors.grey[800],
+                  appBar: AppBar(
+                    backgroundColor: Colors.amber,
+                    automaticallyImplyLeading: false,
+                    title: Text(
+                      "Partituras",
+                      style: TextStyle(color: Colors.black87),
+                    ),
+                    centerTitle: true,
+                    actions: <Widget>[
+                      IconButton(
+                          icon: Icon(Icons.sort_by_alpha),
+                          tooltip: (LiveMusician.currentLanguage == Languages.ENGLISH) 
+                            ? "Alphabetical order"
+                            : "Orden alfabético",
+                          onPressed: sortByName),
+                    ],
                   ),
-                  centerTitle: true,
-                  actions: <Widget>[
-                    IconButton(
-                        icon: Icon(Icons.sort_by_alpha),
-                        tooltip: (LiveMusician.currentLanguage == Languages.ENGLISH) 
-                          ? "Alphabetical order"
-                          : "Orden alfabético",
-                        onPressed: sortByName),
-                  ],
-                ),
-                body: ReorderableListView(
-                  children: <Widget> [
-                    for (MusicalSong song in snapshot.data!)
-                      TextButton(
-                        key: ValueKey(index),
-                        child: Card(
-                          color: Colors.black12,
+                  body: ReorderableListView(
+                    children: <Widget> [
+                      for (MusicalSong song in snapshot.data!)
+                        TextButton(
                           key: ValueKey(index),
-                          elevation: 15,
-                          child: ListTile(
-                            title: Text(
-                              '${index++}.  ${song.fileName}',
-                              style: TextStyle(color: Colors.white),
-                            ),
-                            subtitle: Text(
-                                (song.arranger!.isNotEmpty) ?
-                                  '- Arreglista: ${song.arranger}\n' + 
-                                  '- Género: ${song.genre}':   
-                                  '- Arreglista: N/A\n' + 
-                                  '- Género: N/A',
+                          child: Card(
+                            color: Colors.black12,
+                            key: ValueKey(index),
+                            elevation: 15,
+                            child: ListTile(
+                              title: Text(
+                                '${index++}.  ${song.fileName}',
                                 style: TextStyle(color: Colors.white),
                               ),
-                            leading: (song.pdfPath!.isNotEmpty)
-                              ? Icon(Icons.picture_as_pdf, color: Colors.white)
-                              : Icon(
-                                  Icons.music_note,
-                                  color: Colors.white,
+                              subtitle: Text(
+                                  getCardSubtitle(song),
+                                  style: TextStyle(color: Colors.white),
                                 ),
-                            trailing: TextButton(
-                              child: Icon(
-                                Icons.delete_forever_sharp,
-                                color: Colors.red,
+                              leading: (song.pdfPath!.isNotEmpty)
+                                ? Icon(Icons.picture_as_pdf, color: Colors.white)
+                                : Icon(
+                                    Icons.music_note,
+                                    color: Colors.white,
+                                  ),
+                              trailing: TextButton(
+                                child: Icon(
+                                  Icons.delete_forever_sharp,
+                                  color: Colors.red,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _deleteWarning(song);
+                                  });
+                                },
                               ),
-                              onPressed: () {
-                                setState(() {
-                                  _deleteWarning(song);
-                                });
-                              },
-                            ),
-                          ), 
+                            ), 
+                          ),
+                          onPressed: () {
+                            if (song.pdfPath!.isNotEmpty) {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => PDFReader(path: song.pdfPath, title: song.fileName,),
+                                ),
+                              );
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    (LiveMusician.currentLanguage == Languages.ENGLISH)
+                                    ? 'No music sheet availiable'
+                                    : 'No hay partitura en PDF disponible.',
+                                    ),
+                                ),
+                              );
+                            }
+                          },
                         ),
-                        onPressed: () {
-                          if (song.pdfPath!.isNotEmpty) {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => PDFReader(path: song.pdfPath, title: song.fileName,),
-                              ),
-                            );
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('No hay partitura en PDF disponible.'),
-                              ),
-                            );
+                    ],
+                    onReorder: reorderData,
+                  ),
+                  floatingActionButton: SpeedDial(
+                    backgroundColor: Colors.amber,
+                    animatedIcon: AnimatedIcons.menu_close,
+                    curve: Curves.bounceIn,
+                    overlayColor: Colors.amber,
+                    overlayOpacity: 0.5,
+                    children: [
+                      SpeedDialChild(
+                          child: Icon(Icons.my_library_add_sharp),
+                          backgroundColor: Colors.amber,
+                          onTap: () {
+                            List<String> byHandAddedSong = getAddSongOnSpeedDial();
+                            addMusicalSongAsText(
+                                byHandAddedSong[0],
+                                byHandAddedSong[1],
+                                byHandAddedSong[2],
+                                byHandAddedSong[3],
+                              );
                           }
-                        },
-                      ),
-                  ],
-                  onReorder: reorderData,
-                ),
-                floatingActionButton: SpeedDial(
-                  backgroundColor: Colors.amber,
-                  animatedIcon: AnimatedIcons.menu_close,
-                  curve: Curves.bounceIn,
-                  overlayColor: Colors.amber,
-                  overlayOpacity: 0.5,
-                  children: [
-                    SpeedDialChild(
-                        child: Icon(Icons.my_library_add_sharp),
-                        backgroundColor: Colors.amber,
-                        onTap: () {
-                          addMusicalSongAsText(
-                              getAddSongOnSpeedDial()[0],
-                              getAddSongOnSpeedDial()[1]);
-                        }
-                      ),
-                    SpeedDialChild(
-                        child: Icon(Icons.picture_as_pdf_rounded),
-                        backgroundColor: Colors.amber,
-                        onTap: () {
-                          setState(() {
-                            _openFileExplorer(
-                              allowMultiple: true,
-                              pickingType: FileType.custom,
-                              extension: ['pdf']
-                            );
-                          });
-                        }
-                      ),
-                    SpeedDialChild(
-                        child: Icon(Icons.list),
-                        backgroundColor: Colors.amber,
-                        onTap: () {
-                          setState(() {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => SelectFromAllSongs(setList: this.currentSetList)
-                              )
-                            );
-                          });
-                        }
-                      ),
-                  ],
-                )
-              ); 
-          } else {
-            return CircularProgressIndicator();
+                        ),
+                      SpeedDialChild(
+                          child: Icon(Icons.picture_as_pdf_rounded),
+                          backgroundColor: Colors.amber,
+                          onTap: () {
+                            setState(() {
+                              _openFileExplorer(
+                                allowMultiple: true,
+                                pickingType: FileType.custom,
+                                extension: ['pdf']
+                              );
+                            });
+                          }
+                        ),
+                      SpeedDialChild(
+                          child: Icon(Icons.list),
+                          backgroundColor: Colors.amber,
+                          onTap: () {
+                            setState(() {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => 
+                                    SelectFromAllSongs(
+                                      setList: this.currentSetList,
+                                    )
+                                )
+                              );
+                            });
+                          }
+                        ),
+                    ],
+                  )
+                ); 
+            } else {
+              return CircularProgressIndicator();
+            }
           }
-        }
-      );
+        ),
+    );
   }
 }
 

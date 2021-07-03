@@ -5,6 +5,8 @@ import 'package:live_musician/main.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'home_page.dart';
+
 class SetLists extends StatefulWidget {
   const SetLists({ Key? key }) : super(key: key);
 
@@ -129,126 +131,137 @@ class _SetListsState extends State<SetLists> {
 
   Future<List<String>> load() async {
     SharedPreferences data = await SharedPreferences.getInstance();
-    // await this.save();
+
     if (!_firstSave) {
       await this.save();
     } else {
       _firstSave = false;
     }
 
-    return data.getStringList('setLists')!;
+    if (data.getStringList('setLists') != null) {
+      return data.getStringList('setLists')!;
+    } else {
+      return [];
+    }
   }
 
   Future<void> save() async {
     SharedPreferences data = await SharedPreferences.getInstance();
-
     await data.setStringList('setLists', this.setLists);
   }
 
   @override
   Widget build(BuildContext context) {
     int index = 1;
-    return FutureBuilder<List<String>>(
-      future: Future.any([this.load()]),
-      builder: (
-        context,
-        AsyncSnapshot<List<String>> snapshot,
-        ) {
-          // Check hasData once for all futures.
-          print("SNAPSHOT DATA SETLISTS: ${snapshot.data}");
-          if (snapshot.hasData) {
-            // ************************************
-              // Use the attr `this.songs` to perma-track all listed songs when the app it's running, 'cause another methods have to access the current availiable songs
-              // in order to add a new one, delete, order them...
-              this.getSnapshotData(snapshot);
-            // ************************************
-            index = 1;
-            return Scaffold(
-                backgroundColor: Colors.grey[800],
-                appBar: AppBar(
-                  backgroundColor: Colors.amber,
-                  automaticallyImplyLeading: false,
-                  title: Text(
-                    "SetLists",
-                    style: TextStyle(color: Colors.black87),
+    return WillPopScope(
+      onWillPop: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => HomePage(title: LiveMusician.appBarTitle)
+          )); 
+        return Future.value(false);
+      },
+      child: FutureBuilder<List<String>>(
+        future: Future.any([this.load()]),
+        builder: (
+          context,
+          AsyncSnapshot<List<String>> snapshot,
+          ) {
+            // Check hasData once for all futures.
+            print("SNAPSHOT DATA SETLISTS: ${snapshot.data}");
+            if (snapshot.hasData) {
+                this.getSnapshotData(snapshot);
+              index = 1;
+              return Scaffold(
+                  backgroundColor: Colors.grey[800],
+                  appBar: AppBar(
+                    backgroundColor: Colors.amber,
+                    automaticallyImplyLeading: false,
+                    title: Text(
+                      "SetLists",
+                      style: TextStyle(color: Colors.black87),
+                    ),
+                    centerTitle: true,
+                    actions: <Widget>[
+                      IconButton(
+                          icon: Icon(Icons.sort_by_alpha),
+                          tooltip: (LiveMusician.currentLanguage == Languages.ENGLISH) 
+                            ? "Alphabetical order"
+                            : "Orden alfabético",
+                          onPressed: sortByName),
+                    ],
                   ),
-                  centerTitle: true,
-                  actions: <Widget>[
-                    IconButton(
-                        icon: Icon(Icons.sort_by_alpha),
-                        tooltip: (LiveMusician.currentLanguage == Languages.ENGLISH) 
-                          ? "Alphabetical order"
-                          : "Orden alfabético",
-                        onPressed: sortByName),
-                  ],
-                ),
-                body: ReorderableListView(
-                  children: <Widget> [
-                    for (String setList in snapshot.data!)
-                      TextButton(
-                        key: ValueKey(index),
-                        child: Card(
-                          color: Colors.black12,
+                  body: ReorderableListView(
+                    children: <Widget> [
+                      for (String setList in snapshot.data!)
+                        TextButton(
                           key: ValueKey(index),
-                          elevation: 15,
-                          child: ListTile(
-                            title: Text(
-                              '${index++}.  $setList',
-                              style: TextStyle(color: Colors.white),
-                            ),
-                            subtitle: Text("setlist: $setList"),
-                            leading: Icon(
-                                  Icons.list,
-                                  color: Colors.white,
+                          child: Card(
+                            color: Colors.black12,
+                            key: ValueKey(index),
+                            elevation: 15,
+                            child: ListTile(
+                              title: Text(
+                                '${index++}.  $setList',
+                                style: TextStyle(color: Colors.white),
+                              ),
+                              subtitle: Text("setlist: $setList"),
+                              leading: Icon(
+                                    Icons.list,
+                                    color: Colors.white,
+                                  ),
+                              trailing: TextButton(
+                                child: Icon(
+                                  Icons.delete_forever_sharp,
+                                  color: Colors.red,
                                 ),
-                            trailing: TextButton(
-                              child: Icon(
-                                Icons.delete_forever_sharp,
-                                color: Colors.red,
+                                onPressed: () {
+                                  setState(() {
+                                    _deleteWarning(setList);
+                                  });
+                                },
                               ),
-                              onPressed: () {
-                                setState(() {
-                                  _deleteWarning(setList);
-                                });
-                              },
-                            ),
-                          ), 
+                            ), 
+                          ),
+                          onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => 
+                                   LiveMusicianListView(
+                                     setlist: setList,
+                                     fromHome: false,
+                                     )
+                                ),
+                              );
+                            }
                         ),
-                        onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => 
-                                 LiveMusicianListView(setlist: setList)
-                              ),
-                            );
+                    ],
+                    onReorder: reorderData,
+                  ),
+                  floatingActionButton: SpeedDial(
+                    backgroundColor: Colors.amber,
+                    animatedIcon: AnimatedIcons.menu_close,
+                    curve: Curves.bounceIn,
+                    overlayColor: Colors.amber,
+                    overlayOpacity: 0.5,
+                    children: [
+                      SpeedDialChild(
+                          child: Icon(Icons.my_library_add_sharp),
+                          backgroundColor: Colors.amber,
+                          onTap: () {
+                            addSetList();
                           }
-                      ),
-                  ],
-                  onReorder: reorderData,
-                ),
-                floatingActionButton: SpeedDial(
-                  backgroundColor: Colors.amber,
-                  animatedIcon: AnimatedIcons.menu_close,
-                  curve: Curves.bounceIn,
-                  overlayColor: Colors.amber,
-                  overlayOpacity: 0.5,
-                  children: [
-                    SpeedDialChild(
-                        child: Icon(Icons.my_library_add_sharp),
-                        backgroundColor: Colors.amber,
-                        onTap: () {
-                          addSetList();
-                        }
-                      ),
-                  ],
-                )
-              ); 
-          } else {
-            print("Still loading");
-            return CircularProgressIndicator();
+                        ),
+                    ],
+                  )
+                ); 
+            } else {
+              return CircularProgressIndicator();
+            }
           }
-        }
-      );
+        ),
+    );
   }
 }

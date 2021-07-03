@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:live_musician/utils/languages.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'all_songs_list_view.dart';
@@ -52,7 +53,7 @@ class _SelectFromAllSongsState extends State<SelectFromAllSongs> {
         MusicalSong newSongToList = MusicalSong(
           fileName: musicalSongAttr[0], 
           pdfPath: musicalSongAttr[1],
-          arranger: musicalSongAttr[2], 
+          author: musicalSongAttr[2], 
           genre: musicalSongAttr[3]);
 
           mySongs.add(newSongToList);
@@ -76,7 +77,7 @@ class _SelectFromAllSongsState extends State<SelectFromAllSongs> {
         MusicalSong newSongToList = MusicalSong(
           fileName: musicalSongAttr[0], 
           pdfPath: musicalSongAttr[1],
-          arranger: musicalSongAttr[2], 
+          author: musicalSongAttr[2], 
           genre: musicalSongAttr[3]);
 
           mySongs.add(newSongToList);
@@ -95,7 +96,7 @@ class _SelectFromAllSongsState extends State<SelectFromAllSongs> {
       List<String> newSongToSave = [];
       newSongToSave.add(song.fileName!);
       newSongToSave.add(song.pdfPath!);
-      newSongToSave.add(song.arranger!);
+      newSongToSave.add(song.author!);
       newSongToSave.add(song.genre!);
       
       await data.setStringList('song$songNumber$currentSetList', newSongToSave);
@@ -111,17 +112,15 @@ class _SelectFromAllSongsState extends State<SelectFromAllSongs> {
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () {
-        print('Backbutton pressed (device or appbar button), do whatever you want.');
-
-        //trigger leaving and use own data
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => LiveMusicianListView(setlist: this.currentSetList)
+            builder: (context) => LiveMusicianListView(
+              setlist: this.currentSetList,
+              fromHome: false,
+              )
           )
         );
-
-        //we need to return a future
         return Future.value(false);
       },
       child: 
@@ -138,7 +137,9 @@ class _SelectFromAllSongsState extends State<SelectFromAllSongs> {
                     backgroundColor: Colors.amber,
                     automaticallyImplyLeading: false,
                     title: Text(
-                      this.currentSetList,
+                      (LiveMusician.currentLanguage == Languages.ENGLISH) 
+                        ? 'All Songs'
+                        : 'Todas las canciones',
                       style: TextStyle(color: Colors.black87),
                     ),
                     centerTitle: true,
@@ -146,9 +147,9 @@ class _SelectFromAllSongsState extends State<SelectFromAllSongs> {
                       IconButton(
                           icon: Icon(Icons.sort_by_alpha),
                           tooltip: (LiveMusician.currentLanguage == Languages.ENGLISH) 
-                            ? "Alphabetical order"
-                            : "Orden alfabético",
-                          onPressed: null),
+                            ? 'Alphabetical order'
+                            : 'Orden alfabético',
+                          onPressed: this.staticData.sort),
                     ],
                   ),
                   body: ListView.builder(
@@ -172,11 +173,7 @@ class _SelectFromAllSongsState extends State<SelectFromAllSongs> {
                             style: TextStyle(color: Colors.white),
                           ),
                           subtitle: Text(
-                                  (song.arranger!.isNotEmpty) ?
-                                    '- Arreglista: ${song.arranger}\n' + 
-                                    '- Género: ${song.genre}':   
-                                    '- Arreglista: N/A\n' + 
-                                    '- Género: N/A',
+                                getCardSubtitle(song),
                                 style: TextStyle(color: Colors.white),
                               ),
                           leading: _buildSelectIcon(isSelected, song),
