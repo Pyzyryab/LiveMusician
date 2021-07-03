@@ -18,7 +18,7 @@ String getCardSubtitle(MusicalSong song) {
       '- Author: N/A\n' + 
       '- Genre: N/A';
   } else {
-    return (song.author!.isNotEmpty) ?
+    return (song.author!.isNotEmpty || song.genre!.isNotEmpty) ?
       '- Autor: ${song.author}\n' + 
       '- Género: ${song.genre}':   
       '- Autor: N/A\n' + 

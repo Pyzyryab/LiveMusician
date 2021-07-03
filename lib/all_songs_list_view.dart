@@ -67,93 +67,144 @@ class _LiveMusicianListViewState extends State<LiveMusicianListView> {
       for (var element in _paths!) {
         doc = await PDFDoc.fromPath(element.path!);
         setState(() {
-          this.songs.add(MusicalSong(
-            fileName: element.name.replaceAll(RegExp(r'.pdf'), '').trim().capitalizeFirstofEach, 
-            pdfPath: element.path!, 
-            author: (doc.info.author != "" && doc.info.author != null) ? doc.info.author! : "Sin datos",
-            genre: (doc.info.keywords != [] && doc.info.keywords != null) ? doc.info.keywords![0].capitalize : "...",
-          ));
+          this.addSongWithPDFIfNotExists(element, doc);
         });
       }
   }
+
+  /// Method that appends a new `MusicalSong` to the `this.songs` attribute if that MusicalSong isn't on the list yet.
+  void addSongWithPDFIfNotExists(PlatformFile element, PDFDoc doc) {
+    String formattedPDFName = element.name.replaceAll(RegExp(r'.pdf'), '').trim().capitalizeFirstofEach;
+    bool alreadyOnList = false;
+
+    for (MusicalSong musicalSong in this.songs) {
+      if (musicalSong.fileName == formattedPDFName) {
+        alreadyOnList = true;
+        break;
+      }
+    }
+
+    (alreadyOnList)
+      ? ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                (LiveMusician.currentLanguage == Languages.ENGLISH)
+                ? 'The PDF it\'s already on list, or another one has the same name.'
+                : 'El PDF ya está en la lista, o existe uno con el mismo nombre.',
+                ),
+            ),
+          )
+      : this.songs.add(
+          MusicalSong(
+          fileName: element.name.replaceAll(RegExp(r'.pdf'), '').trim().capitalizeFirstofEach, 
+          pdfPath: element.path!, 
+          author: (doc.info.author != "" && doc.info.author != null) ? doc.info.author! : "Sin datos",
+          genre: (doc.info.keywords != [] && doc.info.keywords != null) ? doc.info.keywords![0].capitalize : "...",
+        )
+      );
+  }
+              
 
   final _songNameFieldController = TextEditingController();
   final _songAuthorFieldController = TextEditingController();
   final _songGenreFieldController = TextEditingController();
 
-void clearTextFields() {
-  _songNameFieldController.clear();
-  _songAuthorFieldController.clear();
-  _songGenreFieldController.clear();
-}
+  void clearTextFields() {
+    _songNameFieldController.clear();
+    _songAuthorFieldController.clear();
+    _songGenreFieldController.clear();
+  }
 
   Future<void> addMusicalSongAsText(String title, String songPlaceholder, 
     String authorPlaceholder, String genrePlaceholder) async {
-    
+      
     return showDialog(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            title: Text(title),
-            content: Column(
-              children: <Widget> [ 
-                Expanded(
-                  child: TextField(
-                    controller: _songNameFieldController,
-                    decoration: InputDecoration(hintText: songPlaceholder),
-                  ),
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(title),
+          content: Column(
+            children: <Widget> [ 
+              Expanded(
+                child: TextField(
+                  controller: _songNameFieldController,
+                  decoration: InputDecoration(hintText: songPlaceholder),
                 ),
-                Expanded(
-                  child: TextField(
-                    controller: _songAuthorFieldController,
-                    decoration: InputDecoration(hintText: authorPlaceholder),
-                  ),
+              ),
+              Expanded(
+                child: TextField(
+                  controller: _songAuthorFieldController,
+                  decoration: InputDecoration(hintText: authorPlaceholder),
                 ),
-                Expanded(
-                  child: TextField(
-                    controller: _songGenreFieldController,
-                    decoration: InputDecoration(hintText: genrePlaceholder),
-                  ),
+              ),
+              Expanded(
+                child: TextField(
+                  controller: _songGenreFieldController,
+                  decoration: InputDecoration(hintText: genrePlaceholder),
                 ),
-              ]
+              ),
+            ]
+          ),
+          actions: <Widget>[
+            // ignore: deprecated_member_use
+            FlatButton(
+              color: Colors.red,
+              textColor: Colors.white,
+              child: Text(
+                (LiveMusician.currentLanguage == Languages.ENGLISH) ? 'CANCEL' : 'CANCELAR'
+              ),
+              onPressed: () {
+                setState(() {
+                  clearTextFields();
+                  Navigator.pop(context);
+                });
+              },
             ),
-            actions: <Widget>[
-              // ignore: deprecated_member_use
-              FlatButton(
-                color: Colors.red,
-                textColor: Colors.white,
-                child: Text(
-                  (LiveMusician.currentLanguage == Languages.ENGLISH) ? 'CANCEL' : 'CANCELAR'
-                ),
-                onPressed: () {
-                  setState(() {
-                    clearTextFields();
-                    Navigator.pop(context);
-                  });
-                },
-              ),
-              // ignore: deprecated_member_use
-              FlatButton(
-                color: Colors.green,
-                textColor: Colors.white,
-                child: Text('OK'),
-                onPressed: () {
-                  setState(() {
-                    this.songs.add(MusicalSong(
-                      fileName: _songNameFieldController.text,
-                      pdfPath: "", // No "by hand" paths allowed
-                      author: _songAuthorFieldController.text,
-                      genre: _songGenreFieldController.text,
-                      )
-                    );
-                    clearTextFields();
-                    Navigator.pop(context); 
-                  });
-                },
-              ),
-            ],
-          );
-        });
+            // ignore: deprecated_member_use
+            FlatButton(
+              color: Colors.green,
+              textColor: Colors.white,
+              child: Text('OK'),
+              onPressed: () {
+                setState(() {
+                  bool alreadyOnList = false;
+                  
+                  for (MusicalSong musicalSong in this.songs) {
+                    if (musicalSong.fileName == _songNameFieldController.text 
+                      && musicalSong.author == _songAuthorFieldController.text
+                      && musicalSong.genre == _songGenreFieldController.text
+                    ) {
+                      alreadyOnList = true;
+                      break;
+                    }
+                  }
+
+                  (alreadyOnList)
+                    ? ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              (LiveMusician.currentLanguage == Languages.ENGLISH)
+                              ? 'The song it\'s already on list, or another one has the same name.'
+                              : 'La canción ya está en la lista, o existe uno con el mismo nombre.',
+                              ),
+                          ),
+                        )
+                    :  this.songs.add(MusicalSong(
+                        fileName: _songNameFieldController.text,
+                        pdfPath: "", // No "by hand" paths allowed
+                        author: _songAuthorFieldController.text,
+                        genre: _songGenreFieldController.text,
+                        )
+                      );
+                      clearTextFields();
+                      Navigator.pop(context); 
+                });
+              },
+            ),
+          ],
+        );
+      }
+    );
   }
 
   Future<void> _deleteWarning(MusicalSong song) async {
@@ -213,6 +264,7 @@ void clearTextFields() {
 
   void getSnapshotData(AsyncSnapshot<List<MusicalSong>> snapshot) {
     this.songs = snapshot.data!;
+    snapshot.data!.forEach((element) {  });
   }
 
   Future<List<MusicalSong>> load() async {
