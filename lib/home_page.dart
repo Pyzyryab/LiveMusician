@@ -16,7 +16,9 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[800],
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         backgroundColor: Colors.amber,
         title: Center(child: Text(widget.title)),
       ),
@@ -37,16 +39,30 @@ class _HomePageState extends State<HomePage> {
                 );
               }, 
               child: Text(
-                'Lector de Partituras',
+                'Todas las canciones y partituras',
+                style: TextStyle(
+                  fontSize: 23
+                ),
               ),
+            ),
+            SizedBox(
+              child: Text('__________________________________'),
+              height: 150,
             ),
             ElevatedButton(
               onPressed: () {
                 Navigator.pushNamed(context, '/SetLists');
               }, 
               child: Text(
-                "SETLists",
+                "Setlists y canciones",
+                style: TextStyle(
+                  fontSize: 23
+                ),
               ),
+            ),
+            SizedBox(
+              child: Text('_____________________'),
+              height: 150,
             ),
           ],
         ),
