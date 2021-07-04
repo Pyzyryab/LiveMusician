@@ -18,6 +18,7 @@ class _SetListsState extends State<SetLists> {
 
   bool _firstSave = true;
   List<String> setLists = [];
+  int orderCounter = 0;
 
   void reorderData(int oldindex, int newindex) async {
     setState(() {
@@ -31,8 +32,9 @@ class _SetListsState extends State<SetLists> {
 
   void sortByName() {
     setState(() {
-      //! Implement comparable or sorting algorithm
-      this.setLists.sort();
+      (this.orderCounter % 2 == 0) ? 
+        this.setLists.sort() : this.setLists.sort((b, a) => a.compareTo(b));
+        this.orderCounter++;
     });
   }
 
@@ -206,7 +208,8 @@ class _SetListsState extends State<SetLists> {
                                 '${index++}.  $setList',
                                 style: TextStyle(color: Colors.white),
                               ),
-                              subtitle: Text("setlist: $setList"),
+                              /// Not implemented. Need to make `Setlist`a custom type first
+                              // subtitle: Text("setlist: $setList"),
                               leading: Icon(
                                     Icons.list,
                                     color: Colors.white,

@@ -36,6 +36,8 @@ class _LiveMusicianListViewState extends State<LiveMusicianListView> {
   List<MusicalSong> songs = [];
   String currentSetList = '';
   bool fromHome = false;
+  bool listOrderController = false;
+  int orderCounter = 0;
 
   @override
   void initState() {
@@ -123,27 +125,30 @@ class _LiveMusicianListViewState extends State<LiveMusicianListView> {
       builder: (context) {
         return AlertDialog(
           title: Text(title),
-          content: Column(
-            children: <Widget> [ 
-              Expanded(
-                child: TextField(
-                  controller: _songNameFieldController,
-                  decoration: InputDecoration(hintText: songPlaceholder),
+          content: SizedBox(
+            height: 200,
+            child: Column(
+              children: <Widget> [ 
+                Expanded(
+                  child: TextField(
+                    controller: _songNameFieldController,
+                    decoration: InputDecoration(hintText: songPlaceholder),
+                  ),
                 ),
-              ),
-              Expanded(
-                child: TextField(
-                  controller: _songAuthorFieldController,
-                  decoration: InputDecoration(hintText: authorPlaceholder),
+                Expanded(
+                  child: TextField(
+                    controller: _songAuthorFieldController,
+                    decoration: InputDecoration(hintText: authorPlaceholder),
+                  ),
                 ),
-              ),
-              Expanded(
-                child: TextField(
-                  controller: _songGenreFieldController,
-                  decoration: InputDecoration(hintText: genrePlaceholder),
+                Expanded(
+                  child: TextField(
+                    controller: _songGenreFieldController,
+                    decoration: InputDecoration(hintText: genrePlaceholder),
+                  ),
                 ),
-              ),
-            ]
+              ]
+            ),
           ),
           actions: <Widget>[
             // ignore: deprecated_member_use
@@ -258,7 +263,8 @@ class _LiveMusicianListViewState extends State<LiveMusicianListView> {
 
   void sortByName() {
     setState(() {
-      this.songs.sort();
+      (this.orderCounter % 2 == 0) ? 
+        this.songs.sort() : this.songs.sort((b, a) => a.fileName!.compareTo(b.fileName!));
     });
   }
 
@@ -357,7 +363,9 @@ class _LiveMusicianListViewState extends State<LiveMusicianListView> {
                     backgroundColor: Colors.amber,
                     automaticallyImplyLeading: false,
                     title: Text(
-                      "Partituras",
+                      (!fromHome) ? currentSetList
+                        : (LiveMusician.currentLanguage == Languages.ENGLISH) 
+                          ? 'Library' : 'Librería',
                       style: TextStyle(color: Colors.black87),
                     ),
                     centerTitle: true,
@@ -365,8 +373,7 @@ class _LiveMusicianListViewState extends State<LiveMusicianListView> {
                       IconButton(
                           icon: Icon(Icons.sort_by_alpha),
                           tooltip: (LiveMusician.currentLanguage == Languages.ENGLISH) 
-                            ? "Alphabetical order"
-                            : "Orden alfabético",
+                            ? "Alphabetical order" : "Orden alfabético",
                           onPressed: sortByName),
                     ],
                   ),
@@ -412,7 +419,11 @@ class _LiveMusicianListViewState extends State<LiveMusicianListView> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => PDFReader(path: song.pdfPath, title: song.fileName,),
+                                  builder: (context) => PDFReader(
+                                    path: song.pdfPath, 
+                                    title: song.fileName,
+                                    song: song
+                                  ),
                                 ),
                               );
                             } else {
@@ -435,38 +446,17 @@ class _LiveMusicianListViewState extends State<LiveMusicianListView> {
                     backgroundColor: Colors.amber,
                     animatedIcon: AnimatedIcons.menu_close,
                     curve: Curves.bounceIn,
-                    overlayColor: Colors.amber,
+                    overlayColor: Colors.transparent,
                     overlayOpacity: 0.5,
-                    children: [
-                      SpeedDialChild(
-                          child: Icon(Icons.my_library_add_sharp),
-                          backgroundColor: Colors.amber,
-                          onTap: () {
-                            List<String> byHandAddedSong = getAddSongOnSpeedDial();
-                            addMusicalSongAsText(
-                                byHandAddedSong[0],
-                                byHandAddedSong[1],
-                                byHandAddedSong[2],
-                                byHandAddedSong[3],
-                              );
-                          }
-                        ),
-                      SpeedDialChild(
-                          child: Icon(Icons.picture_as_pdf_rounded),
-                          backgroundColor: Colors.amber,
-                          onTap: () {
-                            setState(() {
-                              _openFileExplorer(
-                                allowMultiple: true,
-                                pickingType: FileType.custom,
-                                extension: ['pdf']
-                              );
-                            });
-                          }
-                        ),
+                    activeForegroundColor: Colors.green,
+                    children: (!fromHome) ? [
                       SpeedDialChild(
                           child: Icon(Icons.list),
                           backgroundColor: Colors.amber,
+                          label: (LiveMusician.currentLanguage == Languages.ENGLISH)
+                            ? 'Add a new song and his data\n(name, autor and genre) to the library'
+                            : 'Añade una nueva canción y su\ninformación a la librería',
+                          labelBackgroundColor: Colors.white54,
                           onTap: () {
                             setState(() {
                               Navigator.push(
@@ -479,6 +469,42 @@ class _LiveMusicianListViewState extends State<LiveMusicianListView> {
                                 )
                               );
                             });
+                          }
+                        ),
+                      ]
+                      : [
+                      SpeedDialChild(
+                          child: Icon(Icons.picture_as_pdf_rounded),
+                          backgroundColor: Colors.amber,
+                          label: (LiveMusician.currentLanguage == Languages.ENGLISH)
+                            ? 'Add a new music sheet or\ndocument as PDF to the library'
+                            : 'Añade un nuevo PDF como partitura\no como documento a la librería',
+                          labelBackgroundColor: Colors.white54,
+                          onTap: () {
+                            setState(() {
+                              _openFileExplorer(
+                                allowMultiple: true,
+                                pickingType: FileType.custom,
+                                extension: ['pdf']
+                              );
+                            });
+                          }
+                        ),
+                      SpeedDialChild(
+                          child: Icon(Icons.my_library_add_sharp),
+                          backgroundColor: Colors.amber,
+                          label: (LiveMusician.currentLanguage == Languages.ENGLISH)
+                            ? 'Load songs from the library'
+                            : 'Añade canciones desde la librería',
+                          labelBackgroundColor: Colors.white54,
+                          onTap: () {
+                            List<String> byHandAddedSong = getAddSongOnSpeedDial();
+                            addMusicalSongAsText(
+                                byHandAddedSong[0],
+                                byHandAddedSong[1],
+                                byHandAddedSong[2],
+                                byHandAddedSong[3],
+                              );
                           }
                         ),
                     ],
