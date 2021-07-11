@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:live_musician/utils/languages.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'all_songs_list_view.dart';
 import 'main.dart';
@@ -35,6 +36,7 @@ class _HomePageState extends State<HomePage> {
                       LiveMusician.currentLanguage = Languages.ENGLISH;
                       Navigator.popAndPushNamed(
                         context, '/HomePage');
+                        this.saveLanguagePreferences();
                     }, 
                     child: Text(
                       'English',
@@ -47,6 +49,7 @@ class _HomePageState extends State<HomePage> {
                       LiveMusician.currentLanguage = Languages.SPANISH;
                       Navigator.popAndPushNamed(
                         context, '/HomePage');
+                        this.saveLanguagePreferences();
                     }, 
                     child: Text(
                       'Español',
@@ -60,104 +63,136 @@ class _HomePageState extends State<HomePage> {
         });
   }
 
+  Future<void> loadLanguagePreferences() async {
+    SharedPreferences data = await SharedPreferences.getInstance();
+    
+    try {
+      var language = data.getString('language');
+
+      (language == 'Languages.ENGLISH') 
+        ? LiveMusician.currentLanguage = Languages.ENGLISH
+        : LiveMusician.currentLanguage = Languages.SPANISH;
+    } catch (error) {
+      LiveMusician.currentLanguage = Languages.ENGLISH;
+    }
+
+    print("Loaded language: ${LiveMusician.currentLanguage}");
+  }
+
+  Future<void> saveLanguagePreferences() async {
+    SharedPreferences data = await SharedPreferences.getInstance();
+    await data.setString('language', LiveMusician.currentLanguage.toString());
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[800],
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        backgroundColor: Colors.amber,
-        title: Center(child: Text(widget.title)),
-        actions: [
-          // FloatingActionButton(
-          //   child: Icon(Icons.more_horiz),
-          //   onPressed: () {
-          //     menu();
-          //   }),
-        ],
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => LiveMusicianListView(
-                      setlist: 'ALL',
-                      fromHome: true
-                    )
-                  )
-                );
-              }, 
-              child: Text(
-                (LiveMusician.currentLanguage == Languages.ENGLISH)
-                  ? 'Music Library' : 'Librería de Música',
-                style: TextStyle(
-                  fontSize: 23
-                ),
-              ),
+    return FutureBuilder<void>(
+      future: Future.wait([loadLanguagePreferences()]),
+      builder: (
+        context,
+        AsyncSnapshot<void> snapshot
+      ) {
+        if (snapshot.hasData) {
+          return Scaffold(
+            backgroundColor: Colors.grey[800],
+            appBar: AppBar(
+              automaticallyImplyLeading: false,
+              backgroundColor: Colors.amber,
+              title: Center(child: Text(widget.title)),
+              actions: [
+                // FloatingActionButton(
+                //   child: Icon(Icons.more_horiz),
+                //   onPressed: () {
+                //     menu();
+                //   }),
+              ],
             ),
-            SizedBox(
-              child: getLibraryDescription(),
-              height: 100,
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pushNamed(context, '/SetLists');
-              }, 
-              child: Text(
-                (LiveMusician.currentLanguage == Languages.ENGLISH)
-                  ? 'Setlists' : 'Setlists y canciones',
-                style: TextStyle(
-                  fontSize: 23
-                ),
-              ),
-            ),
-            SizedBox(
-              child: getSetlistDescription(),
-              height: 150,
-            ),
-            Column(
-              children: [
-                Text('__________________________________________'),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text( (LiveMusician.currentLanguage == Languages.ENGLISH)
-                      ? '\nConfiguration zone' : '\nConfiguración',
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => LiveMusicianListView(
+                            setlist: 'ALL',
+                            fromHome: true
+                          )
+                        )
+                      );
+                    }, 
+                    child: Text(
+                      (LiveMusician.currentLanguage == Languages.ENGLISH)
+                        ? 'Music Library' : 'Librería de Música',
                       style: TextStyle(
-                        fontSize: 20
-                        ),
+                        fontSize: 23
                       ),
-                      Icon(Icons.settings)
-                  ],
-                ),
-                SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: () {
-                    languageSelector();
-                  }, 
-                  child: Text(
-                    (LiveMusician.currentLanguage == Languages.ENGLISH)
-                      ? 'Languages' : 'Idiomas',
-                    style: TextStyle(
-                      fontSize: 23
                     ),
                   ),
-                ),
-                SizedBox(
-                  child: getSettingsDescription(),
-                  height: 150,
-                ),
-              ]
+                  SizedBox(
+                    child: getLibraryDescription(),
+                    height: 100,
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/SetLists');
+                    }, 
+                    child: Text(
+                      (LiveMusician.currentLanguage == Languages.ENGLISH)
+                        ? 'Setlists' : 'Setlists y canciones',
+                      style: TextStyle(
+                        fontSize: 23
+                      ),
+                    ),
+                  ),
+                  SizedBox(
+                    child: getSetlistDescription(),
+                    height: 150,
+                  ),
+                  Column(
+                    children: [
+                      Text('__________________________________________'),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text( (LiveMusician.currentLanguage == Languages.ENGLISH)
+                            ? '\nConfiguration zone' : '\nConfiguración',
+                            style: TextStyle(
+                              fontSize: 20
+                              ),
+                            ),
+                            Icon(Icons.settings)
+                        ],
+                      ),
+                      SizedBox(height: 20),
+                      ElevatedButton(
+                        onPressed: () {
+                          languageSelector();
+                        }, 
+                        child: Text(
+                          (LiveMusician.currentLanguage == Languages.ENGLISH)
+                            ? 'Languages' : 'Idiomas',
+                          style: TextStyle(
+                            fontSize: 23
+                          ),
+                        ),
+                      ),
+                      SizedBox(
+                        child: getSettingsDescription(),
+                        height: 150,
+                      ),
+                    ]
+                  ),
+                ],
+              ),
             ),
-          ],
-        ),
-      ),
+          );
+        } else {
+          return CircularProgressIndicator();
+        }
+      }
     );
   }
 }

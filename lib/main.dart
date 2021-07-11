@@ -6,8 +6,11 @@ import 'package:live_musician/setlist_list_view.dart';
 import 'package:live_musician/utils/pdf_reader.dart';
 import 'package:flutter/material.dart';
 import 'package:live_musician/home_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-void main() => runApp(LiveMusician());
+void main() async {  
+  runApp(LiveMusician()); 
+}
 
 enum Languages {
   ENGLISH,
@@ -16,8 +19,7 @@ enum Languages {
 
 class LiveMusician extends StatelessWidget {
 
-  static Languages currentLanguage = Languages.ENGLISH;
-  
+  static Languages? currentLanguage = Languages.ENGLISH;
   static const String appBarTitle = 'Live Musician';
 
   // This widget is the root of your application.
