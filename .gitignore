@@ -2,6 +2,8 @@
 android/
 ios/
 web/
+.vscode/
+.pubspec.yaml
 
 # Miscellaneous
 *.class
