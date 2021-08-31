@@ -5,7 +5,7 @@ description: Helps all musician in his live concerts with the best musical tools
 # pub.dev using `pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
-version: 1.0.0+3
+version: 1.2.0+12
 
 environment:
   sdk: ">=2.12.0 <3.0.0"
@@ -15,7 +15,7 @@ dependencies:
     sdk: flutter
   file_picker: ^3.0.3
   shared_preferences: ^2.0.6
-  flutter_pdfview: ^1.0.4
+  advance_pdf_viewer: any
   share: ^2.0.4
   flutter_speed_dial: ^3.0.5
   pdf_text: ^0.5.0

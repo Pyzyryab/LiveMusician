@@ -518,5 +518,3 @@ class _LiveMusicianListViewState extends State<LiveMusicianListView> {
     );
   }
 }
-
-
